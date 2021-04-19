@@ -1,4 +1,9 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import 'coin_data.dart';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -6,6 +11,60 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
+  String selectedCurrency = 'USD';
+  CoinData data = CoinData();
+  int rate;
+  DropdownButton androidDropdown() {
+    List<DropdownMenuItem> menuItems = [];
+    for (String currency in currenciesList) {
+      menuItems.add(DropdownMenuItem(
+        child: Text(currency),
+        value: currency,
+      ));
+    }
+    return DropdownButton(
+      value: selectedCurrency,
+      items: menuItems,
+      onChanged: (value) {
+        setState(() {
+          selectedCurrency = value;
+          getData();
+        });
+      },
+    );
+  }
+
+  CupertinoPicker iosPicker() {
+    List<Widget> menuItems = [];
+    for (String currency in currenciesList) {
+      menuItems.add(Text(currency));
+    }
+
+    return CupertinoPicker(
+      backgroundColor: Colors.lightBlue,
+      itemExtent: 32.0,
+      onSelectedItemChanged: (index) {
+        selectedCurrency = currenciesList[index];
+        getData();
+      },
+      children: menuItems,
+    );
+  }
+
+  void getData() async {
+    var coinData = await data.getCoinData(selectedCurrency);
+    setState(() {
+      rate = coinData['rate'].toInt();
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +86,7 @@ class _PriceScreenState extends State<PriceScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
-                  '1 BTC = ? USD',
+                  '1 BTC = ${rate == null ? '?' : rate} $selectedCurrency',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,
@@ -42,7 +101,7 @@ class _PriceScreenState extends State<PriceScreen> {
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: null,
+            child: Platform.isAndroid ? androidDropdown() : iosPicker(),
           ),
         ],
       ),
