@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'coin_data.dart';
+import 'crypto_card.dart';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -13,7 +14,7 @@ class PriceScreen extends StatefulWidget {
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'USD';
   CoinData data = CoinData();
-  int rate;
+  Map<String, String> prices = {};
   DropdownButton androidDropdown() {
     List<DropdownMenuItem> menuItems = [];
     for (String currency in currenciesList) {
@@ -52,10 +53,29 @@ class _PriceScreenState extends State<PriceScreen> {
   }
 
   void getData() async {
-    var coinData = await data.getCoinData(selectedCurrency);
     setState(() {
-      rate = coinData['rate'].toInt();
+      for (String cryptoCurrency in cryptoList) prices[cryptoCurrency] = '?';
     });
+    try {
+      var newPrices = await data.getCoinData(selectedCurrency);
+      setState(() {
+        prices = newPrices;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  List<CryptoCard> getCryptoCards() {
+    List<CryptoCard> cards = [];
+    for (String cryptoCurrency in cryptoList) {
+      cards.add(CryptoCard(
+        cryptoCurrency: cryptoCurrency,
+        selectedCurrency: selectedCurrency,
+        cryptoPrice: prices[cryptoCurrency],
+      ));
+    }
+    return cards;
   }
 
   @override
@@ -75,26 +95,10 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ${rate == null ? '?' : rate} $selectedCurrency',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: getCryptoCards(),
           ),
           Container(
             height: 150.0,
